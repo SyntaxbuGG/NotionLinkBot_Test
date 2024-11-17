@@ -137,3 +137,7 @@ credentials.json
 .idea
 main.py
 cache
+
+
+
+databasesqlite.db
