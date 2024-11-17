@@ -47,7 +47,6 @@ async def main():
     session = AiohttpSession(
         json_loads=orjson.loads,
     )
-
     bot = Bot(
         token=config.BOT_TOKEN,
         session=session,
@@ -67,4 +66,7 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt as e:
+        print('BOT STOPPED')
