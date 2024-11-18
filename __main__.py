@@ -9,7 +9,7 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from tgbot import handlers
+from tgbot.handlers.commands import router
 from tgbot.data import config
 
 
@@ -18,23 +18,6 @@ def setup_logging():
     bl.basic_colorized_config(level=log_level)
     logger = logging.getLogger(__name__)
     logger.info("Starting bot")
-
-
-def setup_handlers(dp: Dispatcher) -> None:
-    dp.include_router(handlers.setup())
-
-
-def setup_middlewares(dp: Dispatcher) -> None:
-    pass
-
-
-async def setup_aiogram(dp: Dispatcher) -> None:
-    setup_handlers(dp)
-    setup_middlewares(dp)
-
-
-async def aiogram_on_startup_polling(dispatcher: Dispatcher, bot: Bot) -> None:
-    await setup_aiogram(dispatcher)
 
 
 async def aiogram_on_shutdown_polling(dispatcher: Dispatcher, bot: Bot) -> None:
@@ -58,8 +41,8 @@ async def main():
     dp = Dispatcher(
         storage=storage,
     )
+    dp.include_router(router)
 
-    dp.startup.register(aiogram_on_startup_polling)
     dp.shutdown.register(aiogram_on_shutdown_polling)
 
     await dp.start_polling(bot)
