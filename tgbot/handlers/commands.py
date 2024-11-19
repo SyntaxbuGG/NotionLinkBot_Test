@@ -1,9 +1,11 @@
 from ast import For
-from email.utils import unquote
+from re import S
 import select
 import stat
 from turtle import update
-from urllib.parse import quote
+
+import asyncio
+
 
 from tgbot.keyboards import replykeyboard as rk, inlinekeyboard as ik
 from tgbot.constants_helpers import constant_keyboard
@@ -55,32 +57,32 @@ async def get_link_handler(message: Message, state: FSMContext):
                 callback_data=ChooseCallback(chosen=index, get_link="constanta").pack(),
             )
 
-    builder.adjust(2)
-    await state.update_data(all_links=url_links,pick_link=url_links)
+    builder.adjust(2).as_markup()
+    await state.update_data(pick_link=url_links)
     if url:
-     
-        await message.answer(text='Выберите ссылки для сохранение:', reply_markup=builder.as_markup())
+        await message.answer(
+            text="Выберите ссылки для сохранение:", reply_markup=builder.as_markup()
+        )
     else:
         await message.reply("Ссылка не найдена.")
 
 
-
-
 @router.callback_query(ChooseCallback.filter(F.get_link == "constanta"), Form.pick_link)
-async def chosen_links(query: CallbackQuery, callback_data: ChooseCallback, state: FSMContext):
-    
-    chosen_index = callback_data.chosen
-    print(chosen_index)
+async def chosen_links_handler(
+    query: CallbackQuery, callback_data: ChooseCallback, state: FSMContext
+):
+    await state.set_state(Form.save_menu_kb)
+    user_data = await state.get_data()
+    save_menu_added = user_data.get("save_menu_kb", False)
+    selected_user = user_data.get("pick_link", {})
     
 
-    user_data = await state.get_data()
-    selected_user = user_data.get("pick_link", {})
+    chosen_index = callback_data.chosen
     updated_user = {}
 
     for key, value in selected_user.items():
         green_view_link = f"{constant_keyboard.onfullstop}{value[1:]}"
         white_view_link = f"{constant_keyboard.offfullstop}{value[1:]}"
-
 
         if key == chosen_index:
             if value.startswith(f"{constant_keyboard.onfullstop}"):
@@ -92,6 +94,28 @@ async def chosen_links(query: CallbackQuery, callback_data: ChooseCallback, stat
         else:
             updated_user[key] = value
 
+    # Получаем текущую кнопку
+    current_keyboard = query.message.reply_markup
+    # добавляем кнопки save , back
+    save_button = ik.InlineKeyboardButton(
+        text=constant_keyboard.save, callback_data=ChooseCallback(save_state=constant_keyboard.save)
+    )
+    menu_button = ik.InlineKeyboardButton(
+        text=constant_keyboard.menu, callback_data=ChooseCallback(save_state=constant_keyboard.menu)
+    )
+
+    
+    if not save_menu_added:
+        current_keyboard.inline_keyboard.append([save_button, menu_button])
+        await state.update_data(save_menu_kb=True)
+
     await state.update_data(pick_link=updated_user, all_links=updated_user)
     links_text = "\n".join(f"{link} 🔗" for link in updated_user.values())
-    await query.answer(f"{links_text}", reply_markup=rk.save_kb())
+    # await query.answer(f"{links_text}",)
+    await query.message.edit_text(links_text, reply_markup=current_keyboard)
+
+
+@router.callback_query(ChooseCallback.filter(F.save_state==constant_keyboard.save))
+async def save_db_notion_handler(query: CallbackQuery, callback_data: ChooseCallback, state: FSMContext):
+    
+    

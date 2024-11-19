@@ -6,3 +6,4 @@ offfullstop = "⚪"
 
 
 save = "Save"
+menu = 'Menu'
