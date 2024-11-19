@@ -10,6 +10,7 @@ from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from tgbot.handlers.commands import router
+from tgbot.handlers.working_db import db_router
 from tgbot.data import config
 
 
@@ -41,7 +42,7 @@ async def main():
     dp = Dispatcher(
         storage=storage,
     )
-    dp.include_router(router)
+    dp.include_routers(router,db_router)
 
     dp.shutdown.register(aiogram_on_shutdown_polling)
 
