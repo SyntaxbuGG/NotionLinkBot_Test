@@ -1,12 +1,14 @@
 import json
 from datetime import datetime
+from logging import config
 
 
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import JSON, create_engine, func
+from sqlalchemy import create_engine,func
 from sqlalchemy.types import BigInteger, DateTime
 
-from sqlalchemy.ext.mutable import MutableDict
+from tgbot.data import config
+
 
 class Base(DeclarativeBase):
     pass
@@ -30,6 +32,6 @@ class TgLinkUsers(Base):
         return f"User_table_id : {self.id},\nUser_tg_id: {self.id_user_tg}\nUsername_tg: {self.tg_username}\nDict_users: {self.dict_users}"
 
 
-engine = create_engine("sqlite:///databasesqlite.db", echo=True)
+engine = create_engine(config.DATABASE_URL, echo=True)
 
 Base.metadata.create_all(engine)

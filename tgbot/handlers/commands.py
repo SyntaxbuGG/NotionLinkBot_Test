@@ -8,9 +8,9 @@ import asyncio
 
 
 from tgbot.keyboards import replykeyboard as rk, inlinekeyboard as ik
-from tgbot.constants_helpers import constant_keyboard
+from tgbot.constants_helpers import constant_keyboard as ck
 from tgbot.states.states import Form
-from tgbot.filters.callback_data import ChooseCallback
+from tgbot.filters.callback_data import ChooseCallback, SaveMenuCallback
 
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
@@ -32,7 +32,7 @@ async def start_command_handler(message: Message, state: FSMContext):
     await message.answer(greeting_text, reply_markup=rk.first_kb_view())
 
 
-@router.message(F.text == constant_keyboard.link_extract)
+@router.message(F.text == ck.link_extract)
 async def send_text_handler(message: Message, state: FSMContext):
     await state.clear()
     await state.set_state(Form.get_link)
@@ -71,51 +71,50 @@ async def get_link_handler(message: Message, state: FSMContext):
 async def chosen_links_handler(
     query: CallbackQuery, callback_data: ChooseCallback, state: FSMContext
 ):
-    await state.set_state(Form.save_menu_kb)
+
     user_data = await state.get_data()
     save_menu_added = user_data.get("save_menu_kb", False)
     selected_user = user_data.get("pick_link", {})
-    
+    user_send_link = user_data.get("user_pick_link", [])
 
     chosen_index = callback_data.chosen
     updated_user = {}
-
+   
     for key, value in selected_user.items():
-        green_view_link = f"{constant_keyboard.onfullstop}{value[1:]}"
-        white_view_link = f"{constant_keyboard.offfullstop}{value[1:]}"
+        # если в начале ссылки смайлик убирает его чтобы когда будет работать несколько раз итерации не добавился смайлики больше
+        green_view_link = f"{ck.onfullstop}{value.lstrip(ck.offfullstop)}" if not value.startswith(ck.onfullstop) else value
+        white_view_link = f"{ck.offfullstop}{value.lstrip(ck.onfullstop)}" if not value.startswith(ck.offfullstop) else value
 
         if key == chosen_index:
-            if value.startswith(f"{constant_keyboard.onfullstop}"):
+            if value.startswith(f"{ck.onfullstop}"):
                 # Если ссылка уже выбрана (с зеленой точкой), делаем её белой
                 updated_user[key] = white_view_link
             else:
                 # Если ссылка не выбрана, добавляем её с зеленой точкой
                 updated_user[key] = green_view_link
+
         else:
             updated_user[key] = value
 
+    user_send_link = [emoji for emoji in updated_user.values() if emoji.startswith(ck.onfullstop)]
+
+    await state.update_data(pick_link=updated_user,user_pick_link=user_send_link)
+    print(user_send_link)
+    
     # Получаем текущую кнопку
     current_keyboard = query.message.reply_markup
     # добавляем кнопки save , back
     save_button = ik.InlineKeyboardButton(
-        text=constant_keyboard.save, callback_data=ChooseCallback(save_state=constant_keyboard.save)
+        text=ck.save, callback_data=SaveMenuCallback(save_state=ck.save).pack()
     )
     menu_button = ik.InlineKeyboardButton(
-        text=constant_keyboard.menu, callback_data=ChooseCallback(save_state=constant_keyboard.menu)
+        text=ck.menu, callback_data=SaveMenuCallback(save_state=ck.menu).pack()
     )
 
-    
     if not save_menu_added:
         current_keyboard.inline_keyboard.append([save_button, menu_button])
         await state.update_data(save_menu_kb=True)
 
-    await state.update_data(pick_link=updated_user, all_links=updated_user)
     links_text = "\n".join(f"{link} 🔗" for link in updated_user.values())
-    # await query.answer(f"{links_text}",)
+    # await query.answer(f"{links_text}")
     await query.message.edit_text(links_text, reply_markup=current_keyboard)
-
-
-@router.callback_query(ChooseCallback.filter(F.save_state==constant_keyboard.save))
-async def save_db_notion_handler(query: CallbackQuery, callback_data: ChooseCallback, state: FSMContext):
-    
-    
