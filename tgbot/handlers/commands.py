@@ -25,9 +25,9 @@ global_user_pick = set()
 
 @router.message(CommandStart(ignore_case=True))
 async def start_command_handler(message: Message, state: FSMContext):
-    from_user = message.from_user
+    from_user = message.from_user.full_name
 
-    greeting_text = f"С возвращением, {from_user.full_name}! Чем могу помочь?"
+    greeting_text = f"Добро пожаловать {from_user} 👋 \nЧем могу помочь? 😊"
 
     await message.answer(greeting_text, reply_markup=rk.first_kb_view())
 
@@ -100,7 +100,7 @@ async def chosen_links_handler(
     user_send_link = [emoji for emoji in updated_user.values() if emoji.startswith(ck.onfullstop)]
 
     await state.update_data(pick_link=updated_user,user_pick_link=user_send_link)
-    print(user_send_link)
+
     
     # Получаем текущую кнопку
     current_keyboard = query.message.reply_markup

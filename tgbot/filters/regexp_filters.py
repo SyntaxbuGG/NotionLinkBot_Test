@@ -11,8 +11,9 @@ async def get_link_from_text(text: str):
     return ltd
 # Используем asyncio для запуска асинхронной функции
 async def main():
-    result = await get_link_from_text("Посмотрите на этот сайт: instagram.com/abbos и на другой http://kinogo.ru kron.ru/settings")
+    result = await get_link_from_text("https://docs.aiogram.dev/en/stable/utils/keyboard.html#aiogram.utils.keyboard.InlineKeyboardBuilder.adjust")
     print(result)
+
 
 # Запуск программы
 asyncio.run(main())

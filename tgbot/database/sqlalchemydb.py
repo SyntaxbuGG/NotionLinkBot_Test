@@ -31,4 +31,4 @@ class TgLinkUsers(Base):
 
 engine = create_engine(config.DATABASE_URL, echo=True)
 
-Base.metadata.create_all(engine)
+# Base.metadata.create_all(engine)

@@ -8,9 +8,7 @@ text1 = """📚 Темы и ресурсы для изучения/повтор�
 Даже если вы ранее работали с некоторыми из этих инструментов, рекомендуем освежить знания, чтобы уверенно выполнить второе задание."""
 
 
-text2 = """salom kalesan : instagram.com/abbos/salom i na drugoy mir http://kinogo.ru kron.ru/
-                                      settings как ты братан еще есть почта zarbotbekovabbosbek@gmai.com 
-                                      https://curvy-sombrero-f8e.notion.site/12efe546b0fe80b2ac50e4229904cb22"""
+text2 = "https://docs.aiogram.dev/en/stable/utils/keyboard.html#aiogram.utils.keyboard.InlineKeyboardBuilder.adjust"
 
 # все ссылки будет захватывать кроме выше 6 знаков tld
 get_links = re.compile(
