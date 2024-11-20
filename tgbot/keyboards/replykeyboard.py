@@ -7,6 +7,7 @@ from aiogram.types import (
 )
 
 from tgbot.constants_helpers import constant_keyboard as ck
+from tgbot.constants_helpers import constant_dynamic 
 
 
 def first_kb_view():
@@ -21,3 +22,13 @@ def save_kb():
     builder = ReplyKeyboardBuilder()
     builder.button(text=ck.save)
     return builder.as_markup()
+
+
+def add_cat_kb():
+    builder = ReplyKeyboardBuilder()
+    for cat in constant_dynamic.category_urls:
+        builder.button(text=cat)
+
+    builder.adjust(3)
+    return builder.as_markup()
+

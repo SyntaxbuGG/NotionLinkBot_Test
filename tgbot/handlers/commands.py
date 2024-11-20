@@ -97,7 +97,7 @@ async def chosen_links_handler(
             updated_user[key] = value
 
     # Содержит ссылки только те которые пользователь добавил
-    user_send_link = [emoji for emoji in updated_user.values() if emoji.startswith(ck.onfullstop)]
+    user_send_link = [emoji[1:] for emoji in updated_user.values() if emoji.startswith(ck.onfullstop)]
 
     await state.update_data(pick_link=updated_user,user_pick_link=user_send_link)
 

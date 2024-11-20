@@ -6,3 +6,8 @@ class Form(StatesGroup):
     pick_link = State()
     user_pick_link = State()
     save_menu_kb = State()
+
+
+
+class SaveForm(StatesGroup):
+    after_save : State
