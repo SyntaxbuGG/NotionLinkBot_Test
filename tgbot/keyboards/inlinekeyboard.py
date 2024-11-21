@@ -24,7 +24,7 @@ def auto_put_text_kb():
 
     builder.button(
         text=ck.get_id_token_notion,
-        switch_inline_query_current_chat="\nINTEGRATION TOKEN: \nDATABASE: ",
+        switch_inline_query_current_chat=ck.input_user_chat,
 
     )
 

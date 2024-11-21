@@ -5,6 +5,8 @@ classifier = pipeline("text-classification",model='distilbert/distilbert-base-un
 
 
 def analyze_priority(data_url):
+    if not data_url:
+        return 'unknown'
     result = classifier(data_url)[0]  # Берём первый результат
     label = result["label"].lower()  # Достаем priority
     confidence = result["score"]  # Достаём уверенность
@@ -19,5 +21,4 @@ def analyze_priority(data_url):
         return "low"
 
 
-# priority = analyze_priority(data["content"])
-# print(f"Priority: {priority}")
+

@@ -1,12 +1,20 @@
 import httpx
 import asyncio
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 from tgbot.data import config
 
 
+async def create_page(link, user_id, source_link, source_sender):
+    # Попался на circular import, надо отложенный импорт
+    from tgbot.handlers.working_db import db_manager
 
+    check_user_exist = await db_manager.get_notion_id_token(user_id=user_id)
+    if check_user_exist:
+        config.INTEGRATION_TOKEN = check_user_exist[1]
+        config.DATABASE_ID_NOTION = check_user_exist[0]
 
-
-async def create_page(link, user_id, source_link,source_sender):
     headers = {
         "Authorization": f"Bearer {config.INTEGRATION_TOKEN}",
         "Notion-Version": "2022-06-28",
@@ -29,15 +37,25 @@ async def create_page(link, user_id, source_link,source_sender):
         # Проверка статуса ответа
         if response.status_code == 200:
             print("Page created successfully!")
-            print(
-                response.json()
-            )  # Выводим ответ от API (например, ID созданной страницы)
+            print(response.json())
+
+        elif response.status_code == 400:
+            return False
+
         else:
             print(f"Error: {response.status_code}")
             print(response.json())
+            return False
 
 
 async def get_and_update_data_from_notion(user_id, link, category, title, priority):
+    # Попался на circular importю надо отложенный импорт
+    from tgbot.handlers.working_db import db_manager
+
+    check_user_exist =await db_manager.get_notion_id_token(user_id=user_id)
+    if check_user_exist:
+        config.INTEGRATION_TOKEN = check_user_exist[1]
+        config.DATABASE_ID_NOTION = check_user_exist[0]
     headers = {
         "Authorization": f"Bearer {config.INTEGRATION_TOKEN}",
         "Notion-Version": "2022-06-28",
@@ -99,14 +117,19 @@ async def get_and_update_data_from_notion(user_id, link, category, title, priori
 
                 if update_response.status_code == 200:
                     print(f"Page {page_id} updated successfully!")
+
+                elif update_response.status_code == 400:
+                    return await False
                 else:
                     print(
                         f"Error updating page {page_id}: {update_response.status_code}"
                     )
+                    return await False
 
         else:
             print(f"Error fetching data: {response.status_code}")
             print(response.json())
+            return await False
 
 
 # Запуск асинхронной функции

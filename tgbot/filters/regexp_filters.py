@@ -31,7 +31,7 @@ async def main():
 
 
 # Запуск программы
-a= asyncio.run(get_id_token_notion("""@NotionLink_bot 
-INTEGRATION TOKEN:4334332a22 21 5455454
-DATABASE ID: salom3233suka 45544"""))
-print(a)
+# a= asyncio.run(get_id_token_notion("""@NotionLink_bot 
+# INTEGRATION TOKEN: 234234ewag
+# DATABASE ID: salom3233suka 45544"""))
+# print(a)

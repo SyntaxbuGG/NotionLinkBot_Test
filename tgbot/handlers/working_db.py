@@ -6,6 +6,7 @@ from tgbot.api.notionapi import create_page
 from tgbot.api.parsin_url import main as get_data_url
 from tgbot.keyboards import replykeyboard as rk, inlinekeyboard as ik
 from tgbot.states.states import Form, SettingForm
+from tgbot.filters.regexp_filters import get_id_token_notion
 
 from sqlalchemy import create_engine
 from aiogram.fsm.context import FSMContext
@@ -14,8 +15,6 @@ from aiogram.types import (
     CallbackQuery,
     Message,
     ReplyKeyboardRemove,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
 )
 
 from urllib.parse import urlparse
@@ -50,13 +49,19 @@ async def save_db_notion_handler(
         notion_page_id = await create_page(
             link, user_id, source_link=source_link, source_sender=user_get_source
         )
+
         # Для сохранение в базе данных
         success_url = db_manager.save_user_links(
             link, user_id, source_link=source_link, source_sender=user_get_source
         )
-    if success_url and notion_page_id:
-        await query.answer("Ваши ссылки были сохранены в обеих базах данных!")
-
+    if success_url:
+        await query.answer("Ваши ссылки были сохранены в  базу данных!")
+    else:
+        await query.answer("Ошибка при сохранение в базу данных")
+    if notion_page_id:
+        await query.answer("Ваши ссылки были сохранены в  Notion Database!")
+    else:
+        await query.answer("Ошибка при сохранение в Notion Database")
     await query.message.answer(
         text="Выберите категорий который классифируете ваши urls ",
         reply_markup=rk.add_cat_kb(),
@@ -90,10 +95,13 @@ async def my_links_handler(message: Message):
 async def process_cat_handler(message: Message, state: FSMContext):
     category_user_pick = message.text
     user_id = message.from_user.id
+    print(category_user_pick)
     # Получаем данные пользователя из состояния
     user_data = await state.get_data()
     user_choose_link = user_data.get("user_pick_link")
     data_url = await get_data_url(user_choose_link)
+    if not data_url:
+        print("Не работает parser")
 
     try:
         await db_manager.save_data_url(
@@ -122,6 +130,24 @@ async def ask_id_token_handler(message: Message, state: FSMContext):
 
 @db_router.message(SettingForm.get_id_token)
 async def get_id_token_handler(message: Message):
-    print(message.text)
-    await message.answer(text=message.text)
-    
+    user_id = message.from_user.id
+    id_token_notion = await get_id_token_notion(message.text)
+
+    check_user_exist = await db_manager.get_notion_id_token(user_id=user_id)
+    if check_user_exist:
+        get_id_token = {
+            "INTEGRATION_TOKEN": id_token_notion[0][0],
+            "DATABASE_ID": id_token_notion[0][1],
+        }
+
+        save_id_token_frombase = await db_manager.save_notion_id_token(
+            user_id=user_id,
+            integration_token=get_id_token["INTEGRATION_TOKEN"],
+            database_id=get_id_token["DATABASE_ID"],
+        )
+        if save_id_token_frombase:
+            await message.answer("Успешно изменено!!!")
+        else:
+            await message.answer("Один пользовтель один раз может изменить токен")
+    else:
+        await message.answer('Неправильно ввели integration токен или database id\n Еще раз внимательно проверьте')

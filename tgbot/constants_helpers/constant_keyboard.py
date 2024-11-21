@@ -15,6 +15,7 @@ notion_db_integration = """
                          Нажмите  ⬇️
                          """
 
+input_user_chat = "\nINTEGRATION TOKEN: \nDATABASE ID: "
 
 
 save = "Save"

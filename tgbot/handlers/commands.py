@@ -15,7 +15,9 @@ from tgbot.filters.callback_data import ChooseCallback, SaveMenuCallback
 
 from aiogram import Router, F , types
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import any_state
 from aiogram.filters import CommandStart
+from aiogram.filters.state import StateFilter
 from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery 
 
 
@@ -24,8 +26,9 @@ router = Router()
 global_user_pick = set()
 
 
-@router.message(CommandStart(ignore_case=True))
+@router.message(CommandStart(ignore_case=True),StateFilter(any_state))
 async def start_command_handler(message: Message, state: FSMContext):
+    await state.clear()
     from_user = message.from_user.full_name
 
     greeting_text = f"Добро пожаловать {from_user} 👋 \nЧем могу помочь? 😊"

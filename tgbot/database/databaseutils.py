@@ -1,4 +1,5 @@
-from tgbot.database.sqlalchemydb import TgLinkUsers
+from regex import T
+from tgbot.database.sqlalchemydb import NotionInterDb, TgLinkUsers
 from tgbot.nlp_test.text_priority import analyze_priority
 from tgbot.api.notionapi import get_and_update_data_from_notion
 
@@ -59,27 +60,82 @@ class DatabaseManager:
             print(f"Ошибка извлечение данных {e}")
             return False
 
-    async def save_data_url(self, data_url: list[list], user_id, category, user_link):
+    async def save_data_url(self, data_url, user_id, category, user_link):
         try:
             with Session(self.engine) as session:
                 for link, data_link in zip(user_link, data_url):
+                    if not data_link:
+                        data_link = {}
+
                     # через pipeline анализируем текст
-                    get_priority = analyze_priority(data_link["text"])
+                    get_priority = analyze_priority(data_link.get("text",False))
+                    print(get_priority)
+
                     await get_and_update_data_from_notion(
                         user_id=user_id,
                         link=link,
                         category=category,
-                        title=data_link["title"],
+                        title=data_link.get("title",'Unknown'),
                         priority=get_priority,
                     )
                     stmt = select(TgLinkUsers).filter_by(id_user_tg=user_id, url=link)
                     get_result = session.scalar(stmt)
                     if get_result:
-                        get_result.title = data_link["title"]
+                        get_result.title = data_link.get("title",'Unknown')
                         get_result.category = category
                         get_result.priority = get_priority
                         session.add(get_result)
+                    else: 
+                        print('Не сохранился')
+                        return False
                     session.commit()
 
         except Exception as e:
             print(e)
+            return False
+
+
+
+    async def save_notion_id_token(self,user_id,integration_token,database_id):
+        try:
+            with Session(self.engine) as session:
+                stmt = select(NotionInterDb).filter_by(id_user_tg = user_id)
+                print(integration_token)
+                print(database_id)
+        
+                result = session.scalar(stmt)
+                print(result)
+                if not result:
+                    new_record = NotionInterDb(
+                    id_user_tg = user_id,
+                    integration_token = integration_token,
+                    database_id = database_id,
+                    )
+                    session.add(new_record)
+                    session.commit()
+                    return True    
+                else:
+                    return False
+                
+        except Exception as e:
+            print(e)
+            return e
+
+                
+
+    async def get_notion_id_token(self,user_id):
+        try:
+          
+            with Session(self.engine) as sesion:
+                stmt = select(NotionInterDb).filter_by(id_user_tg = user_id)
+                query = sesion.scalar(stmt)
+                print(query)
+                if query:
+                    
+                    return query.database_id, query.integration_token
+                else:
+                    print('Пользователь не существует') 
+                    return False                       
+        except Exception as e:
+            print(f'Ошибка подключение к базуданных {e}')
+            return False
