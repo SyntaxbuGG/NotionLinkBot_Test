@@ -1,7 +1,7 @@
 from transformers import pipeline
 
 # Используем text-classification pipeline для анализа текста
-classifier = pipeline("text-classification", model="distilbert-base-uncased")
+classifier = pipeline("text-classification",model='distilbert/distilbert-base-uncased-finetuned-sst-2-english')
 
 
 def analyze_priority(data_url):

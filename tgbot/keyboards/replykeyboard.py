@@ -33,3 +33,14 @@ def add_cat_kb():
     builder.adjust(3)
     return builder.as_markup()
 
+
+def setting_kb():
+    builder = ReplyKeyboardBuilder()
+    builder.button(text=ck.get_id_token_notion)
+
+    builder.adjust(3)
+
+    return builder.as_markup(resize_keyboard=True)
+
+
+

@@ -56,24 +56,28 @@ async def get_link_handler(message: Message, state: FSMContext):
 
     await state.update_data(get_link=get_source_sender)
     builder = ik.InlineKeyboardBuilder()
-    for index, entity in enumerate(message.entities):
-        if entity.type == "url":
-            link = f"{message.text[entity.offset : entity.offset + entity.length]}"
-            url.append(link)
-            url_links[index] = link
-            builder.button(
-                text=f"{message.text[entity.offset:entity.offset+entity.length]}",
-                callback_data=ChooseCallback(chosen=index, get_link="constanta").pack(),
-            )
+    
 
-    builder.adjust(2).as_markup()
-    await state.update_data(pick_link=url_links)
+    if message.entities:
+        for index, entity in enumerate(message.entities):
+            if entity.type == "url":
+                link = f"{message.text[entity.offset : entity.offset + entity.length]}"
+                url.append(link)
+                url_links[index] = link
+                builder.button(
+                    text=f"{message.text[entity.offset:entity.offset+entity.length]}",
+                    callback_data=ChooseCallback(chosen=index, get_link="constanta").pack(),
+                )
+
+        builder.adjust(2).as_markup()
+        await state.update_data(pick_link=url_links)
     if url:
         await message.answer(
             text="Выберите ссылки для сохранение:", reply_markup=builder.as_markup()
         )
     else:
         await message.reply("Ссылка не найдена.")
+        await state.set_state(Form.get_link)
 
 
 @router.callback_query(ChooseCallback.filter(F.get_link == "constanta"), Form.pick_link)

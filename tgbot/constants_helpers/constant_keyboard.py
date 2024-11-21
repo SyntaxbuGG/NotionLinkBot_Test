@@ -1,17 +1,27 @@
+# Firts_view_keyboards
 link_extract='Link Extraction 🔗'
 my_links = 'My Links 🖇'
 settings = 'Settings ⚙️'
 
-
+# emodji form multiply choose
 onfullstop = "🟢"
 offfullstop = "⚪"
+
+
+
+get_id_token_notion = 'NOTION db-integration_id'
+notion_db_integration = """
+                         Здесь можете настроить NOTION так чтобы данные были сохранены на ваших Notion Database\n
+                         Нажмите  ⬇️
+                         """
+
 
 
 save = "Save"
 menu = 'Menu'
 
 
-pick_caterory = 'Вы'
+
 
 
 menu_back_kb = "С возвращением, {} 👋 \nЧем могу помочь? 🤗"

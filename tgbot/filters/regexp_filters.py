@@ -10,10 +10,28 @@ async def get_link_from_text(text: str):
       
     return ltd
 # Используем asyncio для запуска асинхронной функции
+
+
+
+async def get_id_token_notion(text: str):
+    get_id = re.compile('INTEGRATION TOKEN:\s*(\w+)(?:.*)\s*DATABASE ID:\s+(\w+)')
+
+    result = get_id.findall(text)
+
+    return result
+
+
+
+
 async def main():
     result = await get_link_from_text("https://docs.aiogram.dev/en/stable/utils/keyboard.html#aiogram.utils.keyboard.InlineKeyboardBuilder.adjust")
     print(result)
 
 
+
+
 # Запуск программы
-asyncio.run(main())
+a= asyncio.run(get_id_token_notion("""@NotionLink_bot 
+INTEGRATION TOKEN:4334332a22 21 5455454
+DATABASE ID: salom3233suka 45544"""))
+print(a)
