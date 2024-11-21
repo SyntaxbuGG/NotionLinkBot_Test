@@ -14,6 +14,7 @@ def first_kb_view():
     builder = ReplyKeyboardBuilder()
     builder.button(text=ck.link_extract)
     builder.button(text=ck.my_links)
+    builder.button(text=ck.settings)
     return builder.adjust(3).as_markup(resize_keyboard=True)
 
 

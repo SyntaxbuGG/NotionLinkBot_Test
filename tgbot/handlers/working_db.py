@@ -12,7 +12,7 @@ from tgbot.states.states import Form
 from sqlalchemy import create_engine
 from aiogram.fsm.context import FSMContext
 from aiogram import Router, F
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message , ReplyKeyboardRemove
 
 from urllib.parse import urlparse
 
@@ -33,24 +33,28 @@ async def save_db_notion_handler(
     user_data = await state.get_data()
     # selected_link = user_data.get("pick_link")
     user_choose_link = user_data.get("user_pick_link")
+    user_get_source: str = user_data.get("get_link", {})
 
     if not user_choose_link:
         await query.answer("Нет выбранных ссылок.")
         return
-
     # data_url =await get_data_url(user_choose_link)
     # print(data_url)
 
     # priority = analyze_priority(data_url[][2])
     # print(priority)
-
+    user_id = query.from_user.id
     for link in user_choose_link:
         """Сохранение в обе базе данных"""
-        domain = urlparse(link).netloc or "Unknown"
-        user_id = query.from_user.id
-        notion_page_id = await create_page(link, user_id, domain)
+        source_link = urlparse(link).netloc or "Unknown"
+        #  для сохранение в notion
+        notion_page_id = await create_page(
+            link, user_id, source_link=source_link, source_sender=user_get_source
+        )
         # Для сохранение в базе данных
-        success_url = db_manager.save_user_links(link, user_id, domain)
+        success_url = db_manager.save_user_links(
+            link, user_id, source_link=source_link, source_sender=user_get_source
+        )
     if success_url and notion_page_id:
         await query.answer("Ваши ссылки были сохранены в обеих базах данных!")
 
@@ -60,7 +64,7 @@ async def save_db_notion_handler(
     )
 
 
-@db_router.callback_query(SaveMenuCallback.filter(F.save_state == ck.save))
+@db_router.callback_query(SaveMenuCallback.filter(F.save_state == ck.menu))
 async def back_menu(query: CallbackQuery, state: FSMContext):
     await state.clear()
 
@@ -91,11 +95,15 @@ async def process_cat(message: Message, state: FSMContext):
     user_data = await state.get_data()
     user_choose_link = user_data.get("user_pick_link")
     data_url = await get_data_url(user_choose_link)
-    success =await db_manager.save_data_url(
-        data_url=data_url,
-        category=category_user_pick,
-        user_id=user_id,
-        user_link=user_choose_link,
-    )
-    await state.clear()
-    await message.answer("успешно")
+
+    try:
+
+        success = await db_manager.save_data_url(
+            data_url=data_url,
+            category=category_user_pick,
+            user_id=user_id,
+            user_link=user_choose_link,
+        )
+        await message.answer("Успешно сохранено",reply_markup=ReplyKeyboardRemove())
+    except Exception as e:
+        print(e)

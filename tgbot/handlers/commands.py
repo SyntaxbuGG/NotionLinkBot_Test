@@ -7,15 +7,16 @@ from turtle import update
 import asyncio
 
 
+
 from tgbot.keyboards import replykeyboard as rk, inlinekeyboard as ik
 from tgbot.constants_helpers import constant_keyboard as ck
 from tgbot.states.states import Form
 from tgbot.filters.callback_data import ChooseCallback, SaveMenuCallback
 
-from aiogram import Router, F
+from aiogram import Router, F , types
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import CommandStart
-from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
+from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery 
 
 
 router = Router()
@@ -46,6 +47,14 @@ async def get_link_handler(message: Message, state: FSMContext):
     url = []
     url_links = {}
     await state.set_state(Form.pick_link)
+    get_source_sender = ''
+    chat_type = message.chat.type
+    if chat_type :
+        get_source_sender = chat_type
+    else:
+        get_source_sender = 'unknown'
+
+    await state.update_data(get_link=get_source_sender)
     builder = ik.InlineKeyboardBuilder()
     for index, entity in enumerate(message.entities):
         if entity.type == "url":
@@ -98,7 +107,7 @@ async def chosen_links_handler(
 
     # Содержит ссылки только те которые пользователь добавил
     user_send_link = [emoji[1:] for emoji in updated_user.values() if emoji.startswith(ck.onfullstop)]
-
+    
     await state.update_data(pick_link=updated_user,user_pick_link=user_send_link)
 
     

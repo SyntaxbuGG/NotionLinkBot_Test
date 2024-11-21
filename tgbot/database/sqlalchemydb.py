@@ -22,7 +22,8 @@ class TgLinkUsers(Base):
     title: Mapped[str] = mapped_column(nullable=True)
     category: Mapped[str] = mapped_column(nullable=True)
     priority: Mapped[str] = mapped_column(nullable=True)
-    source: Mapped[str] = mapped_column(nullable=True)
+    source_link: Mapped[str] = mapped_column(nullable=True)
+    source_sender: Mapped[str] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     def __repr__(self) -> str:

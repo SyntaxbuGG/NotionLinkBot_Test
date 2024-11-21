@@ -2,10 +2,10 @@ import httpx
 import asyncio
 from tgbot.data import config
 
-print(config.DATABASE_ID_NOTION)
 
 
-async def create_page(link, user_id, domain):
+
+async def create_page(link, user_id, source_link,source_sender):
     headers = {
         "Authorization": f"Bearer {config.INTEGRATION_TOKEN}",
         "Notion-Version": "2022-06-28",
@@ -14,11 +14,10 @@ async def create_page(link, user_id, domain):
     data = {
         "parent": {"type": "database_id", "database_id": config.DATABASE_ID_NOTION},
         "properties": {
-            "title": {"title": [{"text": {"content": "test"}}]},
             "id_user_tg": {"number": user_id},
-            "category": {"rich_text": [{"text": {"content": "test"}}]},
             "url": {"url": link},
-            "source": {"rich_text": [{"text": {"content": domain}}]},
+            "source_link": {"rich_text": [{"text": {"content": source_link}}]},
+            "source_sender": {"rich_text": [{"text": {"content": source_sender}}]},
         },
     }
     async with httpx.AsyncClient() as client:

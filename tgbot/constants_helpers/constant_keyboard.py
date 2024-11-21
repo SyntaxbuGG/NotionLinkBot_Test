@@ -1,5 +1,6 @@
 link_extract='Link Extraction 🔗'
 my_links = 'My Links 🖇'
+settings = 'Settings ⚙️'
 
 
 onfullstop = "🟢"
