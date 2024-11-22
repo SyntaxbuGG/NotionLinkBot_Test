@@ -49,10 +49,10 @@ async def create_page(link, user_id, source_link, source_sender):
 
 
 async def get_and_update_data_from_notion(user_id, link, category, title, priority):
-    # Попался на circular importю надо отложенный импорт
+    # Попался на circular import надо отложенный импорт
     from tgbot.handlers.working_db import db_manager
 
-    check_user_exist =await db_manager.get_notion_id_token(user_id=user_id)
+    check_user_exist = await db_manager.get_notion_id_token(user_id=user_id)
     if check_user_exist:
         config.INTEGRATION_TOKEN = check_user_exist[1]
         config.DATABASE_ID_NOTION = check_user_exist[0]
@@ -130,6 +130,64 @@ async def get_and_update_data_from_notion(user_id, link, category, title, priori
             print(f"Error fetching data: {response.status_code}")
             print(response.json())
             return await False
+
+
+async def check_notion_credentials(user_id):
+    from tgbot.handlers.working_db import db_manager
+
+    # Получаем токен и ID базы данных для пользователя
+    check_user_exist = await db_manager.get_notion_id_token(user_id=user_id)
+    if check_user_exist:
+        config.INTEGRATION_TOKEN = check_user_exist[1]
+        config.DATABASE_ID_NOTION = check_user_exist[0]
+    else:
+        print("User data not found.")
+        return False
+
+    headers = {
+        "Authorization": f"Bearer {config.INTEGRATION_TOKEN}",
+        "Notion-Version": "2022-06-28",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.get(
+                f"https://api.notion.com/v1/databases/{config.DATABASE_ID_NOTION}",
+                headers=headers,
+            )
+            
+            print("Connection successful! Database information:", response.json())
+
+            if response.status_code == 200:
+                print("Credentials are valid!")
+                print(response.json())  # Здесь можно вывести информацию о базе данных
+                return 1
+            elif response.status_code == 401:
+                print("Invalid integration token.")
+                return -1
+            elif response.status_code == 404:
+                print("Database ID not found.")
+                return -2
+            else:
+                print(f"Unexpected error: {response.status_code}")
+                print(response.json())
+                return False
+            
+    except httpx.HTTPStatusError as e:
+        status_code = e.response.status_code
+        error_detail = e.response.json() if e.response.text else "No additional details"
+
+        if status_code == 401:
+            print("Authentication error: Check your integration token.")
+        elif status_code == 404:
+            print("Not found: Check your DATABASE_ID.")
+        else:
+            print(f"HTTP error occurred: {status_code} - {error_detail}")
+
+    except httpx.ReadTimeout:
+        print("The request timed out. Please try again later.")
+
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
 
 
 # Запуск асинхронной функции

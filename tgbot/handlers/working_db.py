@@ -2,7 +2,7 @@ from tgbot.constants_helpers import constant_keyboard as ck
 from tgbot.data import config
 from tgbot.filters.callback_data import SaveMenuCallback
 from tgbot.database.databaseutils import DatabaseManager
-from tgbot.api.notionapi import create_page
+from tgbot.api.notionapi import create_page , check_notion_credentials
 from tgbot.api.parsin_url import main as get_data_url
 from tgbot.keyboards import replykeyboard as rk, inlinekeyboard as ik
 from tgbot.states.states import Form, SettingForm
@@ -133,8 +133,8 @@ async def get_id_token_handler(message: Message):
     user_id = message.from_user.id
     id_token_notion = await get_id_token_notion(message.text)
 
-    check_user_exist = await db_manager.get_notion_id_token(user_id=user_id)
-    if check_user_exist:
+    check_user_exist_ind_db = await check_notion_credentials(user_id=user_id)
+    if check_user_exist_ind_db == 1:
         get_id_token = {
             "INTEGRATION_TOKEN": id_token_notion[0][0],
             "DATABASE_ID": id_token_notion[0][1],
@@ -149,5 +149,9 @@ async def get_id_token_handler(message: Message):
             await message.answer("Успешно изменено!!!")
         else:
             await message.answer("Один пользовтель один раз может изменить токен")
+    elif check_user_exist_ind_db == -1:
+        await message.answer("Invalid integration token.")
+    elif check_user_exist_ind_db == -2:
+        await message.answer("Database ID not found.")
     else:
-        await message.answer('Неправильно ввели integration токен или database id\n Еще раз внимательно проверьте')
+        await message.answer('Unexpected error')
