@@ -5,7 +5,8 @@ from tgbot.api.notionapi import get_and_update_data_from_notion
 
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from urllib.parse import urlparse
+
+logger = logging.getLogger("logger_setup")
 
 
 class DatabaseManager:
@@ -31,7 +32,7 @@ class DatabaseManager:
                 session.commit()
                 return True
         except Exception as e:
-            logging.critical(f"Ошибка при сохранении данных: {e}")
+            logger.critical(f"Ошибка при сохранении данных: {e}")
             return False
 
     def get_user_links(self, user_id):
@@ -46,22 +47,24 @@ class DatabaseManager:
 
                     return all_links
                 else:
-                    logging.warning("Пользователь в базе данных отсуствует")
+                    logger.warning("Пользователь в базе данных отсуствует")
                     return False
         except Exception as e:
-            logging.critical(f"Ошибка извлечение данных {e}")
+            logger.critical(f"Ошибка извлечение данных {e}")
             return False
 
     async def save_data_url(self, data_url, user_id, category, user_link):
         try:
             with Session(self.engine) as session:
+                success = True  # A flag to track the success of all operations
+
                 for link, data_link in zip(user_link, data_url):
                     if not data_link:
                         data_link = {}
 
                     # через pipeline анализируем текст
                     get_priority = analyze_priority(data_link.get("text", False))
-                
+
                     await get_and_update_data_from_notion(
                         user_id=user_id,
                         link=link,
@@ -77,22 +80,22 @@ class DatabaseManager:
                         get_result.priority = get_priority
                         session.add(get_result)
                         session.commit()
-                        return True
-                    else:
-                        logging.critical("Не сохранился в базу данных ")
-                        return False
-                    
 
+                    else:
+                        logger.critical("Не сохранился в базу данных ")
+                        success =  False
+
+                return success
         except Exception as e:
-            logging.critical(f"Ошибка  {e}")
+            logger.critical(f"Ошибка  {e}")
             return False
 
     async def save_notion_id_token(self, user_id, integration_token, database_id):
         try:
             with Session(self.engine) as session:
-                stmt = select(NotionInterDb).filter_by(id_user_tg=user_id)              
+                stmt = select(NotionInterDb).filter_by(id_user_tg=user_id)
                 result = session.scalar(stmt)
-        
+
                 if not result:
                     new_record = NotionInterDb(
                         id_user_tg=user_id,
@@ -101,16 +104,13 @@ class DatabaseManager:
                     )
                     session.add(new_record)
                     session.commit()
-                    logging.info('New users added table NotionInterDb')
+                    logger.info("New users added table NotionInterDb")
                     return True
                 else:
                     return False
 
         except Exception as e:
-            logging.warning(f"Error :{e}")
-
-            
-            
+            logger.warning(f"Error :{e}")
 
     async def get_notion_id_token(self, user_id):
         try:
@@ -122,6 +122,5 @@ class DatabaseManager:
                 else:
                     return False
         except Exception as e:
-            logging.critical(f"Ошибка подключение к базу данных {e}")
+            logger.critical(f"Ошибка подключение к базу данных {e}")
             return False
-            

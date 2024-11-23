@@ -98,7 +98,7 @@ async def process_cat_handler(message: Message, state: FSMContext):
     print(category_user_pick)
     # Получаем данные пользователя из состояния
     user_data = await state.get_data()
-    user_choose_link = user_data.get("user_pick_link")
+    user_choose_link = user_data.get("user_pick_link",[])
     data_url = await get_data_url(user_choose_link)
 
     succes_save_db = await db_manager.save_data_url(

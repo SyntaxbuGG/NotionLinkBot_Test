@@ -1,10 +1,10 @@
 import logging
 import httpx
-import asyncio
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
+
 from tgbot.data import config
+
+logger = logging.getLogger("logger_setup")
 
 
 async def create_page(link, user_id, source_link, source_sender):
@@ -37,15 +37,15 @@ async def create_page(link, user_id, source_link, source_sender):
 
         # Проверка статуса ответа
         if response.status_code == 200:
-            logging.debug("Page created successfully!")
+            logger.debug("Page created successfully!")
             return True
 
         elif response.status_code == 400:
-            logging.warning("Bad request - invalid data.")
+            logger.warning("Bad request - invalid data.")
             return False
 
         else:
-            logging.error(f"Error: {response.status_code}")
+            logger.error(f"Error: {response.status_code}")
             return False
 
 
@@ -92,7 +92,7 @@ async def get_and_update_data_from_notion(user_id, link, category, title, priori
 
         if response.status_code == 200:
             data = response.json()
-            logging.debug(f"Data retrieved successfully! {data}")
+            logger.debug(f"Data retrieved successfully! {data}")
 
             # Получаем все найденные записи
             results = data.get("results", [])
@@ -117,18 +117,18 @@ async def get_and_update_data_from_notion(user_id, link, category, title, priori
                 data_json_update = update_response.json()
 
                 if update_response.status_code == 200:
-                    logging.debug(f"Page {page_id} updated successfully!")
+                    logger.debug(f"Page {page_id} updated successfully!")
                     return True
 
                 elif update_response.status_code == 400:
-                    logging.warning(f"Bad request - {data_json_update}")
+                    logger.warning(f"Bad request - {data_json_update}")
                     return False
                 else:
-                    logging.error(f"Error updating page {page_id}: {data_json_update}")
+                    logger.error(f"Error updating page {page_id}: {data_json_update}")
                     return False
 
         else:
-            logging.critical(f"Error fetching data: {response.json()}")
+            logger.critical(f"Error fetching data: {response.json()}")
             return False
 
 
@@ -138,7 +138,7 @@ async def check_notion_credentials(user_id, id_token_notion):
         "Notion-Version": "2022-06-28",
     }
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
+        async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"https://api.notion.com/v1/databases/{id_token_notion['database_id']}",
                 headers=headers,
@@ -147,13 +147,13 @@ async def check_notion_credentials(user_id, id_token_notion):
             if response.status_code == 200:
                 return 1
             elif response.status_code == 401:
-                logging.warning("Invalid integration token.")
+                logger.warning("Invalid integration token.")
                 return -1
             elif response.status_code == 404:
-                logging.warning("Database ID not found.")
+                logger.warning("Database ID not found.")
                 return -2
             else:
-                logging.error(f"Unexpected error: {response.status_code}")
+                logger.error(f"Unexpected error: {response.status_code}")
                 return False
 
     except httpx.HTTPStatusError as e:
@@ -161,19 +161,19 @@ async def check_notion_credentials(user_id, id_token_notion):
         error_detail = e.response.json() if e.response.text else "No additional details"
 
         if status_code == 401:
-            logging.warning("Authentication error: Check your integration token.")
+            logger.warning("Authentication error: Check your integration token.")
             return -1
         elif status_code == 404:
-            logging.warning("Not found: Check your DATABASE_ID.")
+            logger.warning("Not found: Check your DATABASE_ID.")
             return -2
         else:
-            logging.warning(f"HTTP error occurred: {status_code} - {error_detail}")
+            logger.warning(f"HTTP error occurred: {status_code} - {error_detail}")
             return False
 
     except httpx.ReadTimeout:
-        logging.warning("The request timed out. Please try again later.")
+        logger.warning("The request timed out. Please try again later.")
         return False
 
     except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")
+        logger.error(f"An unexpected error occurred: {e}")
         return False
