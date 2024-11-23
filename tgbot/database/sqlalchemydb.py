@@ -40,6 +40,7 @@ class NotionInterDb(Base):
     database_id: Mapped[str] = mapped_column(nullable=True)
     integration_token: Mapped[str] = mapped_column(nullable=True)
 
-engine = create_engine(config.DATABASE_URL, echo=True)
+
+# engine = create_engine(config.DATABASE_URL, echo=True)
 
 # Base.metadata.create_all(engine)

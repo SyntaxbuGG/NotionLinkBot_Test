@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import aiohttp
 from bs4 import BeautifulSoup
 
@@ -23,14 +24,15 @@ async def fetch_data(session,url):
             text = " ".join(p.get_text() for p in paragraphs[:5])
         
         
-            data_url = {"title":title, "text": text}
+            data_url = {"title":title, "text": text }
             return await data_url
     except aiohttp.ClientConnectorError as e:
-        print(f"""error": f"Connection failed for {url}: {str(e)}""")
+        logging.warning(f"""error": f"Connection failed for {url}: {str(e)}""")
         return False
     except Exception as e:
-        print(f"""error": f"An error occurred for {url}: {str(e)}""")   
+        logging.warning(f"""error": f"An error occurred for {url}: {str(e)}""")   
         return False
+
 
 async def main(urls):
     async with aiohttp.ClientSession() as session:
@@ -40,5 +42,3 @@ async def main(urls):
     
 
 
-
-print(asyncio.run(main(['ferergc.com'])))

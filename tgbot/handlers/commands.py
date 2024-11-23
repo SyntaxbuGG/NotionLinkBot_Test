@@ -1,32 +1,22 @@
-from ast import For
-from re import S
-import select
-import stat
-from turtle import update
-
-import asyncio
-
-
 
 from tgbot.keyboards import replykeyboard as rk, inlinekeyboard as ik
 from tgbot.constants_helpers import constant_keyboard as ck
 from tgbot.states.states import Form
 from tgbot.filters.callback_data import ChooseCallback, SaveMenuCallback
 
-from aiogram import Router, F , types
+from aiogram import Router, F 
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import any_state
+
 from aiogram.filters import CommandStart
-from aiogram.filters.state import StateFilter
 from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery 
 
 
 router = Router()
 
-global_user_pick = set()
 
 
-@router.message(CommandStart(ignore_case=True),StateFilter(any_state))
+
+@router.message(CommandStart(ignore_case=True))
 async def start_command_handler(message: Message, state: FSMContext):
     await state.clear()
     from_user = message.from_user.full_name

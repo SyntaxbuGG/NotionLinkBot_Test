@@ -1,3 +1,4 @@
+import logging
 import httpx
 import asyncio
 
@@ -36,15 +37,15 @@ async def create_page(link, user_id, source_link, source_sender):
 
         # Проверка статуса ответа
         if response.status_code == 200:
-            print("Page created successfully!")
-            print(response.json())
+            logging.debug("Page created successfully!")
+            return True
 
         elif response.status_code == 400:
+            logging.warning("Bad request - invalid data.")
             return False
 
         else:
-            print(f"Error: {response.status_code}")
-            print(response.json())
+            logging.error(f"Error: {response.status_code}")
             return False
 
 
@@ -91,13 +92,12 @@ async def get_and_update_data_from_notion(user_id, link, category, title, priori
 
         if response.status_code == 200:
             data = response.json()
-            print("Data retrieved successfully!")
-            print(data)
+            logging.debug(f"Data retrieved successfully! {data}")
 
             # Получаем все найденные записи
             results = data.get("results", [])
 
-            # Обновляем найденные записи
+            # Обновляем найденные записи0
             for page in results:
                 page_id = page["id"]  # ID страницы для обновления
                 update_data = {
@@ -114,81 +114,66 @@ async def get_and_update_data_from_notion(user_id, link, category, title, priori
                     headers=headers,
                     json=update_data,
                 )
+                data_json_update = update_response.json()
 
                 if update_response.status_code == 200:
-                    print(f"Page {page_id} updated successfully!")
+                    logging.debug(f"Page {page_id} updated successfully!")
+                    return True
 
                 elif update_response.status_code == 400:
-                    return await False
+                    logging.warning(f"Bad request - {data_json_update}")
+                    return False
                 else:
-                    print(
-                        f"Error updating page {page_id}: {update_response.status_code}"
-                    )
-                    return await False
+                    logging.error(f"Error updating page {page_id}: {data_json_update}")
+                    return False
 
         else:
-            print(f"Error fetching data: {response.status_code}")
-            print(response.json())
-            return await False
+            logging.critical(f"Error fetching data: {response.json()}")
+            return False
 
 
-async def check_notion_credentials(user_id):
-    from tgbot.handlers.working_db import db_manager
-
-    # Получаем токен и ID базы данных для пользователя
-    check_user_exist = await db_manager.get_notion_id_token(user_id=user_id)
-    if check_user_exist:
-        config.INTEGRATION_TOKEN = check_user_exist[1]
-        config.DATABASE_ID_NOTION = check_user_exist[0]
-    else:
-        print("User data not found.")
-        return False
-
+async def check_notion_credentials(user_id, id_token_notion):
     headers = {
-        "Authorization": f"Bearer {config.INTEGRATION_TOKEN}",
+        "Authorization": f"Bearer {id_token_notion['integration_token']}",
         "Notion-Version": "2022-06-28",
     }
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.get(
-                f"https://api.notion.com/v1/databases/{config.DATABASE_ID_NOTION}",
+                f"https://api.notion.com/v1/databases/{id_token_notion['database_id']}",
                 headers=headers,
             )
-            
-            print("Connection successful! Database information:", response.json())
-
+            print(response.status_code)
             if response.status_code == 200:
-                print("Credentials are valid!")
-                print(response.json())  # Здесь можно вывести информацию о базе данных
                 return 1
             elif response.status_code == 401:
-                print("Invalid integration token.")
+                logging.warning("Invalid integration token.")
                 return -1
             elif response.status_code == 404:
-                print("Database ID not found.")
+                logging.warning("Database ID not found.")
                 return -2
             else:
-                print(f"Unexpected error: {response.status_code}")
-                print(response.json())
+                logging.error(f"Unexpected error: {response.status_code}")
                 return False
-            
+
     except httpx.HTTPStatusError as e:
         status_code = e.response.status_code
         error_detail = e.response.json() if e.response.text else "No additional details"
 
         if status_code == 401:
-            print("Authentication error: Check your integration token.")
+            logging.warning("Authentication error: Check your integration token.")
+            return -1
         elif status_code == 404:
-            print("Not found: Check your DATABASE_ID.")
+            logging.warning("Not found: Check your DATABASE_ID.")
+            return -2
         else:
-            print(f"HTTP error occurred: {status_code} - {error_detail}")
+            logging.warning(f"HTTP error occurred: {status_code} - {error_detail}")
+            return False
 
     except httpx.ReadTimeout:
-        print("The request timed out. Please try again later.")
+        logging.warning("The request timed out. Please try again later.")
+        return False
 
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-
-
-# Запуск асинхронной функции
-# asyncio.run(get_data_from_notion())
+        logging.error(f"An unexpected error occurred: {e}")
+        return False
