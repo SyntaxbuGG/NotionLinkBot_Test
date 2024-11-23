@@ -2,26 +2,24 @@ from tgbot.constants_helpers import constant_keyboard as ck
 from tgbot.data import config
 from tgbot.filters.callback_data import SaveMenuCallback
 from tgbot.database.databaseutils import DatabaseManager
-from tgbot.api.notionapi import create_page, check_notion_credentials
+from tgbot.api.notionapi import check_notion_credentials, pages_create_async
 from tgbot.api.parsin_url import main as get_data_url
 from tgbot.keyboards import replykeyboard as rk, inlinekeyboard as ik
 from tgbot.states.states import Form, SettingForm
 from tgbot.filters.regexp_filters import pattern_find_id_token
 
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine
 from aiogram.fsm.context import FSMContext
 from aiogram import Router, F
 from aiogram.types import (
     CallbackQuery,
     Message,
-    ReplyKeyboardRemove,
 )
 
-from urllib.parse import urlparse
 
 db_router = Router()
 
-engine = create_engine(config.DATABASE_URL, echo=True)
+engine = create_async_engine(config.DATABASE_URL, echo=True)
 
 
 db_manager = DatabaseManager(engine)
@@ -33,35 +31,7 @@ async def save_db_notion_handler(
 ):
     # Получаем данные пользователя из состояния
     await state.set_state(Form.user_pick_link)
-    user_data = await state.get_data()
-    user_choose_link = user_data.get("user_pick_link")
-    user_get_source: str = user_data.get("get_link", {})
 
-    if not user_choose_link:
-        await query.answer("Нет выбранных ссылок.")
-        return
-
-    user_id = query.from_user.id
-    for link in user_choose_link:
-        """Сохранение в обе базе данных"""
-        source_link = urlparse(link).netloc or "Unknown"
-        #  для сохранение в notion
-        notion_page_id = await create_page(
-            link, user_id, source_link=source_link, source_sender=user_get_source
-        )
-
-        # Для сохранение в базе данных
-        success_url = db_manager.save_user_links(
-            link, user_id, source_link=source_link, source_sender=user_get_source
-        )
-    if success_url:
-        await query.answer("Ваши ссылки были сохранены в  базу данных!")
-    else:
-        await query.answer("Ошибка при сохранение в базу данных")
-    if notion_page_id:
-        await query.answer("Ваши ссылки были сохранены в  Notion Database!")
-    else:
-        await query.answer("Ошибка при сохранение в Notion Database")
     await query.message.answer(
         text="Выберите категорий который классифируете ваши urls ",
         reply_markup=rk.add_cat_kb(),
@@ -81,7 +51,7 @@ async def back_menu_handler(query: CallbackQuery, state: FSMContext):
 
 @db_router.message(F.text == ck.my_links)
 async def my_links_handler(message: Message):
-    get_links_db = db_manager.get_user_links(message.from_user.id)
+    get_links_db = await db_manager.get_user_links(message.from_user.id)
     if get_links_db:
         all_links = ik.show_link_kb(get_links_db)
         await message.answer(
@@ -95,22 +65,48 @@ async def my_links_handler(message: Message):
 async def process_cat_handler(message: Message, state: FSMContext):
     category_user_pick = message.text
     user_id = message.from_user.id
-    print(category_user_pick)
+
+    get_source_sender = ""
+    chat_type = message.chat.type
+    if chat_type:
+        get_source_sender = chat_type
+    else:
+        get_source_sender = "unknown"
+
+
     # Получаем данные пользователя из состояния
     user_data = await state.get_data()
-    user_choose_link = user_data.get("user_pick_link",[])
+    user_choose_link = user_data.get("user_pick_link", [])
+    print(get_source_sender)
     data_url = await get_data_url(user_choose_link)
+    if not user_choose_link:
+        await message.answer("Нет выбранных ссылок.")
+        return
 
-    succes_save_db = await db_manager.save_data_url(
-        data_url=data_url,
-        category=category_user_pick,
+    #  для сохранение в notion
+    notion_page_id = await pages_create_async(
+        links=user_choose_link,
         user_id=user_id,
-        user_link=user_choose_link,
+        source_sender=get_source_sender,
+        category=category_user_pick,
+        data_urls=data_url,
     )
-    if succes_save_db:
-        await message.answer("Успешно сохранено", reply_markup=ReplyKeyboardRemove())
+    # Для сохранение в базе данных
+    success_database = await db_manager.save_multiple_links(
+        links=user_choose_link,
+        user_id=user_id,
+        user_get_source=get_source_sender,
+        category=category_user_pick,
+        data_urls=data_url,
+    )
+    if success_database:
+        await message.answer("Ваши ссылки были сохранены в  базу данных!")
     else:
-        await message.answer(ck.error)
+        await message.answer("Ошибка при сохранение в базу данных")
+    if notion_page_id:
+        await message.answer("Ваши ссылки были сохранены в  Notion Database!")
+    else:
+        await message.answer("Ошибка при сохранение в Notion Database")
 
 
 @db_router.message(F.text == ck.settings)
@@ -132,9 +128,9 @@ async def get_id_token_handler(message: Message):
     id_token_notion = await pattern_find_id_token(message.text)
 
     check_user_exist_ind_db = await check_notion_credentials(
-        user_id=user_id, id_token_notion=id_token_notion
+        id_token_notion=id_token_notion
     )
-   
+
     if check_user_exist_ind_db == 1:
         get_id_token = {
             "INTEGRATION_TOKEN": id_token_notion[0][0],

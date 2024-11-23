@@ -4,7 +4,7 @@ from transformers import pipeline
 classifier = pipeline("text-classification",model='distilbert/distilbert-base-uncased-finetuned-sst-2-english')
 
 
-def analyze_priority(data_url):
+async def analyze_priority(data_url):
     if not data_url:
         return 'unknown'
     result = classifier(data_url)[0]  # Берём первый результат

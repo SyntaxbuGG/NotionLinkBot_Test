@@ -26,7 +26,7 @@ class TelegramLogHandler(logging.Handler):
         asyncio.create_task(self.send_log(record))
 
 
-def setup_logging(bot: Bot, chat_id: int = None, log_level: int = logging.DEBUG):
+def setup_logging(bot: Bot, chat_id: int = None, log_level: int = logging.INFO):
     # цветной вывод в консоль
     bl.basic_colorized_config(level=log_level)
     logger = logging.getLogger('logger_setup')

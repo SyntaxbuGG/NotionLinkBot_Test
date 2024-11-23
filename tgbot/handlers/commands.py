@@ -1,25 +1,24 @@
-
 from tgbot.keyboards import replykeyboard as rk, inlinekeyboard as ik
 from tgbot.constants_helpers import constant_keyboard as ck
 from tgbot.states.states import Form
 from tgbot.filters.callback_data import ChooseCallback, SaveMenuCallback
 
-from aiogram import Router, F 
+from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 
 from aiogram.filters import CommandStart
-from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery 
+from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 
 
 router = Router()
 
 
-
-
 @router.message(CommandStart(ignore_case=True))
 async def start_command_handler(message: Message, state: FSMContext):
     await state.clear()
+
     from_user = message.from_user.full_name
+
 
     greeting_text = f"Добро пожаловать {from_user} 👋 \nЧем могу помочь? 😊"
 
@@ -40,16 +39,8 @@ async def get_link_handler(message: Message, state: FSMContext):
     url = []
     url_links = {}
     await state.set_state(Form.pick_link)
-    get_source_sender = ''
-    chat_type = message.chat.type
-    if chat_type :
-        get_source_sender = chat_type
-    else:
-        get_source_sender = 'unknown'
 
-    await state.update_data(get_link=get_source_sender)
     builder = ik.InlineKeyboardBuilder()
-    
 
     if message.entities:
         for index, entity in enumerate(message.entities):
@@ -59,7 +50,9 @@ async def get_link_handler(message: Message, state: FSMContext):
                 url_links[index] = link
                 builder.button(
                     text=f"{message.text[entity.offset:entity.offset+entity.length]}",
-                    callback_data=ChooseCallback(chosen=index, get_link="constanta").pack(),
+                    callback_data=ChooseCallback(
+                        chosen=index, get_link="constanta"
+                    ).pack(),
                 )
 
         builder.adjust(2).as_markup()
@@ -77,7 +70,6 @@ async def get_link_handler(message: Message, state: FSMContext):
 async def chosen_links_handler(
     query: CallbackQuery, callback_data: ChooseCallback, state: FSMContext
 ):
-
     user_data = await state.get_data()
     save_menu_added = user_data.get("save_menu_kb", False)
     selected_user = user_data.get("pick_link", {})
@@ -85,11 +77,19 @@ async def chosen_links_handler(
 
     chosen_index = callback_data.chosen
     updated_user = {}
-   
+
     for key, value in selected_user.items():
         # если в начале ссылки смайлик убирает его чтобы когда будет работать несколько раз итерации не добавился смайлики больше
-        green_view_link = f"{ck.onfullstop}{value.lstrip(ck.offfullstop)}" if not value.startswith(ck.onfullstop) else value
-        white_view_link = f"{ck.offfullstop}{value.lstrip(ck.onfullstop)}" if not value.startswith(ck.offfullstop) else value
+        green_view_link = (
+            f"{ck.onfullstop}{value.lstrip(ck.offfullstop)}"
+            if not value.startswith(ck.onfullstop)
+            else value
+        )
+        white_view_link = (
+            f"{ck.offfullstop}{value.lstrip(ck.onfullstop)}"
+            if not value.startswith(ck.offfullstop)
+            else value
+        )
 
         if key == chosen_index:
             if value.startswith(f"{ck.onfullstop}"):
@@ -103,11 +103,12 @@ async def chosen_links_handler(
             updated_user[key] = value
 
     # Содержит ссылки только те которые пользователь добавил
-    user_send_link = [emoji[1:] for emoji in updated_user.values() if emoji.startswith(ck.onfullstop)]
-    
-    await state.update_data(pick_link=updated_user,user_pick_link=user_send_link)
+    user_send_link = [
+        emoji[1:] for emoji in updated_user.values() if emoji.startswith(ck.onfullstop)
+    ]
 
-    
+    await state.update_data(pick_link=updated_user, user_pick_link=user_send_link)
+
     # Получаем текущую кнопку
     current_keyboard = query.message.reply_markup
     # добавляем кнопки save , back
