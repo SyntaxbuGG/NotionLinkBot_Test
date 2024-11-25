@@ -11,12 +11,11 @@ from tgbot.data import config
 logger = logging.getLogger("logger_setup")
 
 
-async def create_page(link, user_id, source_sender, category, title, priority):
+async def create_page(link, user_id, source_sender,source_link, category, title, priority):
     # Попался на circular import, надо отложенный импорт
     from tgbot.handlers.working_db import db_manager
 
-    get_priority = await analyze_priority(priority)
-    source_link = urlparse(link).netloc or "Unknown"
+ 
 
     check_user_exist = await db_manager.get_notion_id_token(user_id=user_id)
     if check_user_exist:
@@ -37,7 +36,7 @@ async def create_page(link, user_id, source_sender, category, title, priority):
             "source_sender": {"rich_text": [{"text": {"content": source_sender}}]},
             "category": {"rich_text": [{"text": {"content": category}}]},
             "title": {"title": [{"text": {"content": title}}]},
-            "priority": {"rich_text": [{"text": {"content": get_priority}}]},
+            "priority": {"rich_text": [{"text": {"content": priority}}]},
         },
     }
     async with httpx.AsyncClient() as client:
@@ -54,12 +53,14 @@ async def create_page(link, user_id, source_sender, category, title, priority):
             logger.error("Bad request - invalid data.")
             print(response.json())
             return False
-        
+
         # Ограничение количества запросов: Notion имеет лимит на количество запросов в секунду (RPS)
         elif response.status_code == 409:  # Обработка ошибки 409
             logger.error(f"Conflict error: {response.status_code}")
             await asyncio.sleep(1)  # Пауза перед повторным запросом
-            return await create_page(link, user_id, source_sender, category, title, priority) 
+            return await create_page(
+                link, user_id, source_sender, category, title, priority
+            )
 
         else:
             logger.critical(f"Error: {response.status_code}")
@@ -204,10 +205,13 @@ async def pages_create_async(links, user_id, source_sender, category, data_urls)
         create_page(
             link=link,
             user_id=user_id,
+            source_link = urlparse(link).netloc or "Unknown",
             source_sender=source_sender,
             category=category,
-            priority=data.get("text", False),
-            title=data.get("title", "unknown"),
+            priority=await analyze_priority(
+                data.get("text", False) if isinstance(data, dict) else False,
+            ),
+            title=data.get("title", "unknown") if isinstance(data, str) else 'Unknown',
         )
         for link, data in zip(links, data_urls)
     ]

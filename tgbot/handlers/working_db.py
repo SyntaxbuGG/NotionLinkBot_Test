@@ -10,7 +10,7 @@ from tgbot.filters.regexp_filters import pattern_find_id_token
 
 from sqlalchemy.ext.asyncio import create_async_engine
 from aiogram.fsm.context import FSMContext
-from aiogram import Router, F
+from aiogram import Bot, Router, F
 from aiogram.types import (
     CallbackQuery,
     Message,
@@ -62,7 +62,7 @@ async def my_links_handler(message: Message):
 
 
 @db_router.message(Form.user_pick_link)
-async def process_cat_handler(message: Message, state: FSMContext):
+async def process_cat_handler(message: Message, state: FSMContext, bot: Bot):
     category_user_pick = message.text
     user_id = message.from_user.id
 
@@ -73,7 +73,6 @@ async def process_cat_handler(message: Message, state: FSMContext):
     else:
         get_source_sender = "unknown"
 
-
     # Получаем данные пользователя из состояния
     user_data = await state.get_data()
     user_choose_link = user_data.get("user_pick_link", [])
@@ -83,6 +82,7 @@ async def process_cat_handler(message: Message, state: FSMContext):
         await message.answer("Нет выбранных ссылок.")
         return
 
+    await bot.send_chat_action(message.chat.id, "typing")
     #  для сохранение в notion
     notion_page_id = await pages_create_async(
         links=user_choose_link,
@@ -99,6 +99,7 @@ async def process_cat_handler(message: Message, state: FSMContext):
         category=category_user_pick,
         data_urls=data_url,
     )
+
     if success_database:
         await message.answer("Ваши ссылки были сохранены в  базу данных!")
     else:

@@ -41,7 +41,9 @@ async def main():
     )
 
     storage = MemoryStorage()
+
     setup_logging(bot=bot, chat_id=config.CHAT_ID)
+    
     dp = Dispatcher(
         storage=storage,
     )

@@ -9,6 +9,8 @@ from tgbot.nlp_test.text_priority import analyze_priority
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 from sqlalchemy import select
+# from sqlalchemy.dialects.sqlite import insert as sqlite_upsert
+
 
 logger = logging.getLogger("logger_setup")
 
@@ -17,21 +19,20 @@ class DatabaseManager:
     def __init__(self, engine):
         self.engine = engine
         self.AsyncSessionMaker: async_sessionmaker[AsyncSession] = async_sessionmaker(
-            bind=self.engine, expire_on_commit=False
+            bind=self.engine,expire_on_commit=False
         )
 
     async def save_user_links(
         self,
         link: str,
         user_id: int,
+        source_link: str,
         source_sender: str,
         priority: str,
         title: str,
-        category: str
+        category: str,
     ) -> bool:
         try:
-            source_link = urlparse(link).netloc or "Unknown"
-            get_priority = await analyze_priority(priority)
             async with self.AsyncSessionMaker() as session:
                 stmt = select(TgLinkUsers).filter_by(id_user_tg=user_id, url=link)
                 result = await session.execute(stmt)
@@ -42,9 +43,9 @@ class DatabaseManager:
                         url=link,
                         source_link=source_link,
                         source_sender=source_sender,
-                        priority=get_priority,
+                        priority=priority,
                         title=title,
-                        category=category
+                        category=category,
                     )
                     session.add(tg_user)
                     await session.commit()
@@ -117,18 +118,39 @@ class DatabaseManager:
         data_urls: dict,
     ) -> list[bool]:
         """Асинхронное сохранение нескольких ссылок в базе данных"""
+        # async with self.AsyncSessionMaker() as session:
+        #     tasks = [
+        #         {
+        #             "url": link,
+        #             "id_user_tg": user_id,
+        #             "source_sender": user_get_source,
+        #             "source_link": urlparse(link).netloc or "Unknown",
+        #             "category": category,
+        #             "priority": await analyze_priority(data.get("text", False)),
+        #             "title": data.get("title", "Unknown"),
+        #         }
+        #         for link, data in zip(links, data_urls)
+        #     ]
+        #     # Этот insert работает только с sqllite
+        #     insert_stmt = sqlite_upsert(TgLinkUsers).values(tasks)
+        #     insert_stmt = insert_stmt.on_conflict_do_nothing(
+        #         index_elements=["id_user_tg", "url"]
+        #     )
+        #     session.execute(insert_stmt)
 
         tasks = [
             self.save_user_links(
                 link=link,
                 user_id=user_id,
+                source_link=urlparse(link).netloc or "Unknown",
                 source_sender=user_get_source,
                 category=category,
-                priority=data.get("text", False),
-                title=data.get("title", "Unknown"),
+                priority=await analyze_priority(data.get("text", False) if isinstance(data,dict) else False),
+                title= data.get("title", "Unknown") if isinstance(data,dict) else 'Unknown',
             )
             for link, data in zip(links, data_urls)
         ]
+
         # Выполнение задач параллельно
         results = await asyncio.gather(*tasks, return_exceptions=True)
         return results

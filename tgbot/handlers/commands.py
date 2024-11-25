@@ -3,7 +3,7 @@ from tgbot.constants_helpers import constant_keyboard as ck
 from tgbot.states.states import Form
 from tgbot.filters.callback_data import ChooseCallback, SaveMenuCallback
 
-from aiogram import Router, F
+from aiogram import Bot, Router, F
 from aiogram.fsm.context import FSMContext
 
 from aiogram.filters import CommandStart
@@ -14,9 +14,9 @@ router = Router()
 
 
 @router.message(CommandStart(ignore_case=True))
-async def start_command_handler(message: Message, state: FSMContext):
+async def start_command_handler(message: Message, state: FSMContext ,bot :Bot):
     await state.clear()
-
+    
     from_user = message.from_user.full_name
 
 

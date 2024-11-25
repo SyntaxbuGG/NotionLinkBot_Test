@@ -21,7 +21,7 @@ async def fetch_data(session, url):
             paragraphs = soup.find_all("p")
             text = " ".join(p.get_text() for p in paragraphs[:5])
 
-            data_url = {"title": title, "text": text}
+            data_url = {"title": title, "text": text }
             return data_url
     except aiohttp.ClientConnectorError as e:
         logger.warning(f"""error": f"Connection failed for {url}: {str(e)}""")

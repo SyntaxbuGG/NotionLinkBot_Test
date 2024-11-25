@@ -6,7 +6,7 @@ classifier = pipeline("text-classification",model='distilbert/distilbert-base-un
 
 async def analyze_priority(data_url):
     if not data_url:
-        return 'unknown'
+        return 'Unknown'
     result = classifier(data_url)[0]  # Берём первый результат
     label = result["label"].lower()  # Достаем priority
     confidence = result["score"]  # Достаём уверенность
