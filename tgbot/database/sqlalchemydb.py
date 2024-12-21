@@ -27,6 +27,7 @@ class TgLinkUsers(Base):
     source_sender: Mapped[str] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
+
     def __repr__(self) -> str:
         return f"User_table_id : {self.id},\nUser_tg_id: {self.id_user_tg}\nUsername_tg: {self.tg_username}\nDict_users: {self.dict_users}"
 
