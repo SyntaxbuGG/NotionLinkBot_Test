@@ -31,7 +31,7 @@ pip install -r requirements.txt
 env  
 Копировать код  
 BOT_TOKEN=ваш_токен_бота телеграм  
-DATABASE_URL=Ваша датабаза # или строка подключения к PostgreSQL    
+DATABASE_URL=Ваша датабаза # или строка подключения к PostgreSQL 
 INTEGRATION_TOKEN=ваш_токен_Notion 
 DATABASE_ID_NOTION=ваш_идентификатор_базы_данных_Notion  
 CHAT_ID = ваша чат id  телеграм канала чтобы следить за логами  
