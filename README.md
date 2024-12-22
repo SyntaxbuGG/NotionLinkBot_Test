@@ -20,7 +20,7 @@ bash
 Копировать код  
 git clone https://github.com/SyntaxbuGG/NotionLinkBot_Test.git .  
 
-### Шаг 2: Установка зависимостей
+### Шаг 2: Установка зависимостей  
 Убедитесь, что у вас установлен Python 3.9+ и выполните:  
 
 bash  
@@ -31,8 +31,8 @@ pip install -r requirements.txt
 env  
 Копировать код  
 BOT_TOKEN=ваш_токен_бота телеграм  
-DATABASE_URL=Ваша датабаза # или строка подключения к PostgreSQL 
-INTEGRATION_TOKEN=ваш_токен_Notion 
+DATABASE_URL=Ваша датабаза # или строка подключения к PostgreSQL  
+INTEGRATION_TOKEN=ваш_токен_Notion  
 DATABASE_ID_NOTION=ваш_идентификатор_базы_данных_Notion  
 CHAT_ID = ваша чат id  телеграм канала чтобы следить за логами  
 ## Шаг 4: Запуск бота  
