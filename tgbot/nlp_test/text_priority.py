@@ -11,7 +11,7 @@ async def analyze_priority(data_url):
     label = result["label"].lower()  # Достаем priority
     confidence = result["score"]  # Достаём уверенность
 
-    if confidence < 0.5:  # Если уверенность низкая, вернем "low"
+    if confidence < 0.3:  # Если уверенность низкая, вернем "low"
         return "low"
     if "high" in label:
         return "high"

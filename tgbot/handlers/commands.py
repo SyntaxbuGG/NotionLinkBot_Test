@@ -41,7 +41,7 @@ async def get_link_handler(message: Message, state: FSMContext):
     await state.set_state(Form.pick_link)
 
     builder = ik.InlineKeyboardBuilder()
-
+   
     if message.entities:
         for index, entity in enumerate(message.entities):
             if entity.type == "url":

@@ -131,13 +131,13 @@ async def get_id_token_handler(message: Message):
     check_user_exist_ind_db = await check_notion_credentials(
         id_token_notion=id_token_notion
     )
-
+    
     if check_user_exist_ind_db == 1:
         get_id_token = {
-            "INTEGRATION_TOKEN": id_token_notion[0][0],
-            "DATABASE_ID": id_token_notion[0][1],
+            "INTEGRATION_TOKEN": id_token_notion['integration_token'],
+            "DATABASE_ID": id_token_notion['database_id'],
         }
-
+        
         save_id_token_frombase = await db_manager.save_notion_id_token(
             user_id=user_id,
             integration_token=get_id_token["INTEGRATION_TOKEN"],
