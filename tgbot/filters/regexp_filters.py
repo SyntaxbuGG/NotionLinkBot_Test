@@ -17,6 +17,7 @@ async def pattern_find_id_token(text: str):
     get_id_token = re.compile('INTEGRATION TOKEN:\s*(\w+)(?:.*)\s*DATABASE ID:\s+(\w+)')
 
     result = get_id_token.findall(text)
+    
     finish_resutl = {'integration_token':result[0][0],'database_id':result[0][1]}
     return finish_resutl
 
